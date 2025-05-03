@@ -38,23 +38,36 @@ with open('arch_coords.csv','w') as f:
 
 # 이차함수 회귀 및 그래프
 
+import warnings
+warnings.filterwarnings('ignore', category=UserWarning, module='matplotlib')
+
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 
+# 스케일 정의
+pixels_per_cm = 50        # 예: 1 cm = 50 px
+scale = 1.0 / pixels_per_cm
+
 # CSV 불러오기
 df = pd.read_csv('arch_coords.csv')
+
+# 픽셀 좌표 → cm 변환
 x = df['x_pixel'] * scale
 y = df['y_pixel'] * scale
 
 # 2차 회귀
-coeffs = np.polyfit(x, y, 2)   # [a, b, c]
+coeffs = np.polyfit(x, y, 2)
 y_fit = np.polyval(coeffs, x)
 
 # 그래프
-plt.scatter(x,y, label='측정 아치 곡선')
-plt.plot(x, y_fit, color='red', label=f'$y={coeffs[0]:.3e}x^2+{coeffs[1]:.3f}x+{coeffs[2]:.3f}$')
-plt.xlabel('발 길이 위치 (cm)')
-plt.ylabel('아치 높이 (cm)')
+plt.figure(figsize=(6,4))
+plt.scatter(x, y, label='Measured arch points')
+plt.plot(x, y_fit, 'r-',
+         label=f'y = {coeffs[0]:.3e} x² + {coeffs[1]:.3f} x + {coeffs[2]:.3f}')
+plt.xlabel('Foot length position (cm)')
+plt.ylabel('Arch height (cm)')
+plt.title('Arch Profile Quadratic Fit')
 plt.legend()
+plt.tight_layout()
 plt.show()
