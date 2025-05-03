@@ -1,0 +1,60 @@
+import cv2
+import numpy as np
+
+# 1) 이미지 불러오기
+img = cv2.imread('박지윤.jpg')
+gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+# 2) 이진화 (threshold)
+_, thresh = cv2.threshold(gray, 128, 255, cv2.THRESH_BINARY_INV)
+
+# 3) 윤곽선 검출
+contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+# 가장 큰 contour를 발바닥 윤곽으로 간주
+cnt = max(contours, key=cv2.contourArea)
+
+# 4) 아치 부분 필터링 (예: 중간 30–60% 높이에 해당하는 점만 골라내기)
+# 바운딩 박스 height, y 위치 계산
+x,y,w,h = cv2.boundingRect(cnt)
+arch_min = int(y + 0.3*h)
+arch_max = int(y + 0.6*h)
+arch_pts = [pt[0] for pt in cnt if arch_min < pt[0][1] < arch_max]
+
+# 5) x축 방향 정렬 후 좌표 저장
+arch_pts = sorted(arch_pts, key=lambda p: p[0])
+with open('arch_coords.csv','w') as f:
+    f.write('x_pixel,y_pixel\n')
+    for x_pix,y_pix in arch_pts:
+        f.write(f'{x_pix},{y_pix}\n')
+
+
+# 윤곽선 검출: 전체 족적에서 외부 테두리(contour) 추출
+# 아치 부분만 필터링: 이미지 높이의 중간 구간(30–60%)에 있는 점들을 모음
+# 좌표 CSV: 𝑥
+# x 픽셀값 순서대로 저장
+
+
+
+
+# 이차함수 회귀 및 그래프
+
+import numpy as np
+import matplotlib.pyplot as plt
+import pandas as pd
+
+# CSV 불러오기
+df = pd.read_csv('arch_coords.csv')
+x = df['x_pixel'] * scale
+y = df['y_pixel'] * scale
+
+# 2차 회귀
+coeffs = np.polyfit(x, y, 2)   # [a, b, c]
+y_fit = np.polyval(coeffs, x)
+
+# 그래프
+plt.scatter(x,y, label='측정 아치 곡선')
+plt.plot(x, y_fit, color='red', label=f'$y={coeffs[0]:.3e}x^2+{coeffs[1]:.3f}x+{coeffs[2]:.3f}$')
+plt.xlabel('발 길이 위치 (cm)')
+plt.ylabel('아치 높이 (cm)')
+plt.legend()
+plt.show()
